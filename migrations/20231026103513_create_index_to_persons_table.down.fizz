@@ -1,0 +1,3 @@
+drop_index("persons", "name")
+drop_index("persons", "surname")
+drop_index("persons", "country_id")

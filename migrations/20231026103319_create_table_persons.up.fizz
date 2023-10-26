@@ -1,0 +1,9 @@
+create_table("persons") {
+  t.Column("id", "integer", {primary: true})
+  t.Column("name", "string", {"default": ""})
+  t.Column("patronymic", "string", {"default": ""})
+  t.Column("surname", "string", {"default": ""})
+  t.Column("age", "integer", {})
+  t.Column("gender", "string", {"default": ""})
+  t.Column("country_id", "string", {"default": ""})
+}
