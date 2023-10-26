@@ -56,6 +56,7 @@ func (s *APIServer) Run() {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 
+	router.Get("/", makeHTTPHandlerFunc(s.handleGetAccounts))
 	router.Get("/{id}", makeHTTPHandlerFunc(s.handleGetAccountByID))
 	router.Post("/", makeHTTPHandlerFunc(s.handlePostAccount))
 	router.Delete("/{id}", makeHTTPHandlerFunc(s.handleDeleteAccountByID))
@@ -63,6 +64,17 @@ func (s *APIServer) Run() {
 
 	log.Println("Server is up and listening on port", s.listenAddr)
 	log.Fatal(http.ListenAndServe(s.listenAddr, router))
+}
+
+func (s *APIServer) handleGetAccounts(rw http.ResponseWriter, req *http.Request) error {
+
+	persons, err := s.storage.GetPersons()
+	if err != nil {
+		return fmt.Errorf("GetAllAccountFailed")
+	}
+
+	return WriteJSON(rw, http.StatusOK, persons)
+
 }
 
 func (s *APIServer) handleGetAccountByID(rw http.ResponseWriter, req *http.Request) error {
@@ -102,5 +114,17 @@ func (s *APIServer) handleDeleteAccountByID(rw http.ResponseWriter, req *http.Re
 }
 
 func (s *APIServer) handlePutAccount(rw http.ResponseWriter, req *http.Request) error {
-	return nil
+	p, _ := NewPerson(18, "A", "B", "C", "M", "ua")
+
+	// []Country{
+	// 	{
+	// 		CountryID: "ua",
+	// 	}}}
+
+	personsID, err := s.storage.AddPerson(p)
+	if err != nil {
+		return err
+	}
+
+	return WriteJSON(rw, http.StatusOK, personsID)
 }

@@ -15,21 +15,25 @@ type Person struct {
 	Surname    string `json:"surname"`
 	Gender     string `json:"gender"`
 	Age        int    `json:"age"`
+	CountryID  string `json:"country_id"`
 	CreatedAt  time.Time
-	Country    []Country
+	UpdatedAt  time.Time
 }
 
-type Country struct {
-	CountryID   string  `json:"country_id"`
-	Probability float32 `json:"probability"`
-}
+// type Country struct {
+// 	CountryID   string  `json:"country_id"`
+// 	Probability float32 `json:"probability"`
+// }
 
-func NewPerson(id int, name, patronymic, surname string) (Person, error) {
+func NewPerson(age int, name, patronymic, surname, gender, countryID string) (Person, error) {
 	return Person{
-		ID:         id,
 		Name:       name,
 		Patronymic: patronymic,
 		Surname:    surname,
-		CreatedAt:  time.Now().UTC(),
+		Gender:     gender,
+		Age:        age,
+		CountryID:  countryID,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}, nil
 }
