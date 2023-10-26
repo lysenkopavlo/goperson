@@ -20,7 +20,7 @@ func main() {
 	conf := NewConfig()
 
 	// dataSourceName will be using in the data base connection
-	dsn := DSN(conf)
+	dsn := conf.FormDSN()
 
 	// create a connection to database
 	conn, err := ConnectSQL(dsn)

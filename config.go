@@ -53,7 +53,7 @@ func getEnvAsInt(name string, defaultVal int) int {
 }
 
 // DSN return DataSourceName as string
-func DSN(dbConfig Config) string {
+func (dbConfig Config) FormDSN() string {
 	return fmt.Sprintf(
 		"host=%s port=%d dbname=%s user=%s password=%s",
 		dbConfig.DBConf.Host,
