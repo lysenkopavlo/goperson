@@ -31,11 +31,6 @@ type APIServer struct {
 	ExternalSource config.ExternalLinks
 }
 
-// APIerror is a type to hold server errors
-type APIerror struct {
-	Error string
-}
-
 // NewAPIserver return an instance of *APIserver with
 // specified port address
 func NewAPIserver(listenAddr string, typeOfStorage storage.DataBase, externalLinks config.ExternalLinks) *APIServer {
@@ -76,7 +71,7 @@ type apiFunc func(http.ResponseWriter, *http.Request) error
 func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		if err := f(rw, r); err != nil {
-			WriteJSON(rw, http.StatusBadRequest, APIerror{Error: err.Error()})
+			WriteJSON(rw, r.Response.StatusCode, err)
 		}
 	}
 }
@@ -86,7 +81,7 @@ func (s *APIServer) handleGetPersons(rw http.ResponseWriter, req *http.Request) 
 
 	persons, err := s.storage.GetPersons()
 	if err != nil {
-		return WriteJSON(rw, http.StatusBadRequest, fmt.Errorf("GetAllAccountFailed"))
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while getting all the persons is %v", err))
 	}
 
 	return WriteJSON(rw, http.StatusOK, persons)
@@ -102,7 +97,7 @@ func (s *APIServer) handleGetPersonByID(rw http.ResponseWriter, req *http.Reques
 	}
 	person, err := s.storage.GetPersonByID(id)
 	if err != nil {
-		return WriteJSON(rw, http.StatusNotFound, err)
+		return WriteJSON(rw, http.StatusNotFound, fmt.Errorf("error while getting person by ID is %v", err))
 	}
 
 	return WriteJSON(rw, http.StatusOK, person)
@@ -119,35 +114,35 @@ func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) 
 	// Create PostPerson struct to put received values
 	receivedPerson, err := persons.NewPostPerson(req)
 	if err != nil {
-		return WriteJSON(rw, http.StatusBadRequest, err)
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while handling POST method is %v", err))
 	}
 
 	// Enrich struct fields with age
 	upgraded, err := persons.EnrichPostPerson(s.ExternalSource.AgeLink, "age", receivedPerson)
 	if err != nil {
-		return WriteJSON(rw, http.StatusBadRequest, err)
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while age enrichment is %v", err))
 	}
-
+	// Enrich struct fields with gender
 	upgraded, err = persons.EnrichPostPerson(s.ExternalSource.GenderLink, "gender", upgraded)
 
 	if err != nil {
-		return WriteJSON(rw, http.StatusBadRequest, err)
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while gender enrichment is %v", err))
 	}
 
-	// update a Person struct before putting it into db
+	// Enrich struct fields with nationality
 	upgraded, err = persons.EnrichPostPerson(s.ExternalSource.NationalityLink, "nationality", upgraded)
 	if err != nil {
-		return WriteJSON(rw, http.StatusBadRequest, err)
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while nationality enrichment is %v", err))
 	}
-
+	// update a Person struct before putting it into db
 	personToPut, err := persons.EnrichPerson(upgraded)
 	if err != nil {
-		return WriteJSON(rw, http.StatusBadRequest, err)
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while enrichment of type Person is %v", err))
 
 	}
 	id, err := s.storage.AddPerson(personToPut)
 	if err != nil {
-		return WriteJSON(rw, http.StatusBadRequest, err)
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while putting Person is %v", err))
 	}
 
 	return WriteJSON(rw, http.StatusOK, id)
@@ -163,7 +158,7 @@ func (s *APIServer) handleDeletePersonByID(rw http.ResponseWriter, req *http.Req
 	}
 	err = s.storage.DeletePersonByID(id)
 	if err != nil {
-		return WriteJSON(rw, http.StatusNotFound, err)
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while deleting: %v\n", err))
 	}
 
 	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person with id %d deleted", id))
@@ -174,12 +169,12 @@ func (s *APIServer) handlePutPerson(rw http.ResponseWriter, req *http.Request) e
 	p, err := types.NewPerson(age, name, patronymic, surname, gender, countryID)
 
 	if err != nil {
-		return WriteJSON(rw, http.StatusNotFound, err)
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while creating entity of type Person is: %v\n", err))
 	}
 
 	personsID, err := s.storage.AddPerson(p)
 	if err != nil {
-		return err
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while adding Person is: %v\n", err))
 	}
 
 	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person added successfully. Id is %d", personsID))

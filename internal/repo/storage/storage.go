@@ -3,7 +3,6 @@ package storage
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/lysenkopavlo/goperson/internal/types"
 )
@@ -34,7 +33,7 @@ func (psql *PostgresRepo) GetPersons() ([]types.Person, error) {
 
 	rows, err := psql.DB.Query(query)
 	if err != nil {
-		log.Printf("error while querying is: %v\n", err)
+		return nil, fmt.Errorf("error from querying is: %v\n", err)
 	}
 
 	defer rows.Close()
@@ -65,10 +64,8 @@ func (psql *PostgresRepo) GetPersons() ([]types.Person, error) {
 
 	//good practice to check the error after scanning rows
 	if err = rows.Err(); err != nil {
-		log.Fatal("Error scanning rows", err)
+		return nil, fmt.Errorf("error from GetAllRows is: %v\n", err)
 	}
-
-	fmt.Println("Recorded data:", persons)
 
 	return persons, nil
 
@@ -110,8 +107,6 @@ func (psql *PostgresRepo) DeletePersonByID(id int) error {
 		return fmt.Errorf("Deleting a row failed: %v\n", err)
 	}
 
-	log.Printf("Person with id %d deleted", id)
-
 	return nil
 }
 
@@ -135,6 +130,5 @@ func (psql *PostgresRepo) AddPerson(p types.Person) (int64, error) {
 		return -1, fmt.Errorf("Inserting a row failed: %v\n", err)
 	}
 
-	log.Print("Person added successfully")
 	return int64(personsID), nil
 }

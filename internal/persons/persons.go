@@ -16,7 +16,7 @@ func NewPostPerson(req *http.Request) (types.PostPerson, error) {
 	pp, err := ExtractPostPerson(req.Body)
 
 	if err != nil {
-		return types.PostPerson{}, fmt.Errorf("%v", err)
+		return types.PostPerson{}, fmt.Errorf("error while extracting value of type PostPerson from body is: %v", err)
 	}
 
 	return pp, nil
@@ -29,7 +29,7 @@ func ExtractPostPerson(body io.ReadCloser) (types.PostPerson, error) {
 
 	bytes, err := io.ReadAll(body)
 	if err != nil {
-		return types.PostPerson{}, fmt.Errorf("%v", err)
+		return types.PostPerson{}, fmt.Errorf("error while response/request body reading %v", err)
 	}
 
 	defer body.Close()
@@ -37,7 +37,7 @@ func ExtractPostPerson(body io.ReadCloser) (types.PostPerson, error) {
 	err = json.Unmarshal(bytes, &person)
 
 	if err != nil {
-		return types.PostPerson{}, fmt.Errorf("%v", err)
+		return types.PostPerson{}, fmt.Errorf("error while unmarshalling is: %v", err)
 	}
 	return person, nil
 }
@@ -47,13 +47,13 @@ func EnrichPostPerson(link, enrichment string, target types.PostPerson) (types.P
 
 	resp, err := http.Get(link)
 	if err != nil {
-		return types.PostPerson{}, fmt.Errorf("%v", err)
+		return types.PostPerson{}, fmt.Errorf("error while requesting link %s is %v", link, err)
 	}
 
 	updated, err := ExtractPostPerson(resp.Body)
 
 	if err != nil {
-		return types.PostPerson{}, fmt.Errorf("%v", err)
+		return types.PostPerson{}, fmt.Errorf("error while extracting value of type PostPerson from body is: %v", err)
 
 	}
 
@@ -65,6 +65,7 @@ func EnrichPostPerson(link, enrichment string, target types.PostPerson) (types.P
 	case "nationality":
 		target.Country[0].CountryID = countryPicker(updated)
 	}
+
 	return target, nil
 }
 
@@ -85,7 +86,7 @@ func EnrichPerson(update types.PostPerson) (types.Person, error) {
 	)
 
 	if err != nil {
-		return types.Person{}, err
+		return types.Person{}, fmt.Errorf("error while enriching Person struct is: %v", err)
 	}
 
 	return p, nil
