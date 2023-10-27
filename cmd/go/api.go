@@ -9,14 +9,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/lysenkopavlo/goperson/internal/config"
 	"github.com/lysenkopavlo/goperson/internal/persons"
 	"github.com/lysenkopavlo/goperson/internal/repo/storage"
 	"github.com/lysenkopavlo/goperson/internal/types"
 )
 
 type APIServer struct {
-	listenAddr string
-	storage    storage.DataBase
+	listenAddr     string
+	storage        storage.DataBase
+	ExternalSource config.ExternalLinks
 }
 
 // APIerror is a type to hold server errors
@@ -26,10 +28,11 @@ type APIerror struct {
 
 // NewAPIserver return an instance of *APIserver with
 // specified port address
-func NewAPIserver(listenAddr string, typeOfStorage storage.DataBase) *APIServer {
+func NewAPIserver(listenAddr string, typeOfStorage storage.DataBase, externalLinks config.ExternalLinks) *APIServer {
 	return &APIServer{
-		listenAddr: listenAddr,
-		storage:    typeOfStorage,
+		listenAddr:     listenAddr,
+		storage:        typeOfStorage,
+		ExternalSource: externalLinks,
 	}
 }
 
@@ -68,6 +71,7 @@ func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
 	}
 }
 
+// handleGetPersons returns all the persons from table
 func (s *APIServer) handleGetPersons(rw http.ResponseWriter, req *http.Request) error {
 
 	persons, err := s.storage.GetPersons()
@@ -79,6 +83,7 @@ func (s *APIServer) handleGetPersons(rw http.ResponseWriter, req *http.Request) 
 
 }
 
+// handleGetPersonByID finds person by given id
 func (s *APIServer) handleGetPersonByID(rw http.ResponseWriter, req *http.Request) error {
 	vars := chi.URLParam(req, "id")
 	id, err := strconv.Atoi(vars)
@@ -94,6 +99,7 @@ func (s *APIServer) handleGetPersonByID(rw http.ResponseWriter, req *http.Reques
 
 }
 
+// handlePostPerson handles POST request from random API
 func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) error {
 
 	// Get a JSON struct from random API
@@ -106,37 +112,39 @@ func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) 
 		return WriteJSON(rw, http.StatusBadRequest, err)
 	}
 
-	// Enrich struct fields
-	updated, err := persons.EnrichPostPerson("https://api.agify.io/?name=Dmitriy", receivedPerson)
+	// Enrich struct fields with age
+	upgraded, err := persons.EnrichPostPerson(s.ExternalSource.AgeLink, "age", receivedPerson)
 	if err != nil {
 		return WriteJSON(rw, http.StatusBadRequest, err)
 	}
 
-	personToPut, err := persons.EnrichPerson(updated)
+	upgraded, err = persons.EnrichPostPerson(s.ExternalSource.GenderLink, "gender", upgraded)
+
 	if err != nil {
 		return WriteJSON(rw, http.StatusBadRequest, err)
 	}
 
+	// update a Person struct before putting it into db
+	upgraded, err = persons.EnrichPostPerson(s.ExternalSource.NationalityLink, "nationality", upgraded)
+	if err != nil {
+		return WriteJSON(rw, http.StatusBadRequest, err)
+	}
+
+	personToPut, err := persons.EnrichPerson(upgraded)
+	if err != nil {
+		return WriteJSON(rw, http.StatusBadRequest, err)
+
+	}
 	id, err := s.storage.AddPerson(personToPut)
 	if err != nil {
 		return WriteJSON(rw, http.StatusBadRequest, err)
 	}
 
-	// gender, err := UpdatePostPerson("https://api.genderize.io/?name=Dmitriy")
-	// if err != nil {
-	// 	return WriteJSON(rw, http.StatusBadRequest, err)
-	// }
-
-	// update a Person struct before putting it into db
-
-	// country, err := UpdatePostPerson("https://api.nationalize.io/?name=Dmitriy")
-	// if err != nil {
-	// 	return WriteJSON(rw, http.StatusBadRequest, err)
-	// }
-
 	return WriteJSON(rw, http.StatusOK, id)
 
 }
+
+// handleDeletePersonByID delete an person by given id
 func (s *APIServer) handleDeletePersonByID(rw http.ResponseWriter, req *http.Request) error {
 	vars := chi.URLParam(req, "id")
 	id, err := strconv.Atoi(vars)
@@ -151,6 +159,7 @@ func (s *APIServer) handleDeletePersonByID(rw http.ResponseWriter, req *http.Req
 	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person with id %d deleted", id))
 }
 
+// handlePutPerson puts person into table
 func (s *APIServer) handlePutPerson(rw http.ResponseWriter, req *http.Request) error {
 	p, err := types.NewPerson(18, "A", "B", "C", "M", "ua")
 

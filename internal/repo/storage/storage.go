@@ -14,7 +14,6 @@ type DataBase interface {
 	GetPersonByID(int) (types.Person, error)
 	DeletePersonByID(int) error
 	AddPerson(types.Person) (int64, error)
-	UpdatePerson(types.Person, string) error
 }
 
 // PostgresRepo type will implement DataBase interface
@@ -29,6 +28,7 @@ func NewPostgresRepo(conn *sql.DB) *PostgresRepo {
 	}
 }
 
+// GetPersons commands database to give all the persons
 func (psql *PostgresRepo) GetPersons() ([]types.Person, error) {
 	query := `SELECT * FROM persons`
 
@@ -74,6 +74,7 @@ func (psql *PostgresRepo) GetPersons() ([]types.Person, error) {
 
 }
 
+// GetPersonByID commands database to give one person with specified id
 func (psql *PostgresRepo) GetPersonByID(id int) (types.Person, error) {
 	p := types.Person{}
 	query := `	SELECT * FROM persons WHERE id=$1`
@@ -99,6 +100,7 @@ func (psql *PostgresRepo) GetPersonByID(id int) (types.Person, error) {
 	return p, nil
 }
 
+// DeletePersonByID commands database to delete person with specified id
 func (psql *PostgresRepo) DeletePersonByID(id int) error {
 
 	query := `DELETE FROM persons WHERE id=$1`
@@ -113,6 +115,7 @@ func (psql *PostgresRepo) DeletePersonByID(id int) error {
 	return nil
 }
 
+// AddPerson commands database to add one person
 func (psql *PostgresRepo) AddPerson(p types.Person) (int64, error) {
 
 	var personsID int
@@ -134,7 +137,4 @@ func (psql *PostgresRepo) AddPerson(p types.Person) (int64, error) {
 
 	log.Print("Person added successfully")
 	return int64(personsID), nil
-}
-func (psql *PostgresRepo) UpdatePerson(p types.Person, str string) error {
-	return nil
 }

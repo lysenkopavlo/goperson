@@ -36,6 +36,6 @@ func main() {
 	psql := storage.NewPostgresRepo(conn)
 	defer psql.DB.Close()
 
-	httpServer := NewAPIserver(port, psql)
+	httpServer := NewAPIserver(port, psql, conf.EnrichSource)
 	httpServer.Run()
 }

@@ -10,7 +10,7 @@ type PostPerson struct {
 	Surname    string `json:"surname"`
 	Gender     string `json:"gender"`
 	Age        int    `json:"age"`
-	Country
+	Country    []Country
 }
 
 type Country struct {
