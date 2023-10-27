@@ -35,7 +35,7 @@ func NewConfig() Config {
 			Port:     getEnvAsInt("port", 5432),
 			Dbname:   getEnv("dbname", ""),
 			User:     getEnv("user", "postgres"),
-			Password: getEnv("password", "changeme"),
+			Password: getEnv("password", ""),
 		},
 		EnrichSource: ExternalLinks{
 			AgeLink:         getEnv("agelink", ""),

@@ -10,7 +10,7 @@ import (
 	"github.com/lysenkopavlo/goperson/internal/types"
 )
 
-func UpdatePerson(update types.PostPerson) (types.Person, error) {
+func EnrichPerson(update types.PostPerson) (types.Person, error) {
 	p, err := types.NewPerson(
 		update.Age,
 		update.Name,
