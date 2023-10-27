@@ -64,7 +64,6 @@ func EnrichPostPerson(link, enrichment string, target types.PostPerson) (types.P
 		target.Gender = updated.Gender
 	case "nationality":
 		target.Country[0].CountryID = countryPicker(updated)
-		fmt.Printf("PERSONS ARE: %#v and %#v\n", target, updated)
 	}
 	return target, nil
 }

@@ -15,6 +15,16 @@ import (
 	"github.com/lysenkopavlo/goperson/internal/types"
 )
 
+// values to creating dummy struct in put method
+const (
+	age        = 18
+	name       = "A"
+	patronymic = "B"
+	surname    = "C"
+	gender     = "M"
+	countryID  = "ua"
+)
+
 type APIServer struct {
 	listenAddr     string
 	storage        storage.DataBase
@@ -161,7 +171,7 @@ func (s *APIServer) handleDeletePersonByID(rw http.ResponseWriter, req *http.Req
 
 // handlePutPerson puts person into table
 func (s *APIServer) handlePutPerson(rw http.ResponseWriter, req *http.Request) error {
-	p, err := types.NewPerson(18, "A", "B", "C", "M", "ua")
+	p, err := types.NewPerson(age, name, patronymic, surname, gender, countryID)
 
 	if err != nil {
 		return WriteJSON(rw, http.StatusNotFound, err)
