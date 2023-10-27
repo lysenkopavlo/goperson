@@ -1,7 +1,7 @@
 BINARY_NAME=goperson
 
 build:
-	go build -o ./bin/${BINARY_NAME}
+	go build -o ./bin/${BINARY_NAME} ./cmd/go/
 
 
 run: build
