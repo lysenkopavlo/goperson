@@ -56,37 +56,43 @@ func (s *APIServer) Run() {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 
-	router.Get("/", makeHTTPHandlerFunc(s.handleGetAccounts))
-	router.Get("/{id}", makeHTTPHandlerFunc(s.handleGetAccountByID))
-	router.Post("/", makeHTTPHandlerFunc(s.handlePostAccount))
-	router.Delete("/{id}", makeHTTPHandlerFunc(s.handleDeleteAccountByID))
-	router.Put("/", makeHTTPHandlerFunc(s.handlePutAccount))
+	router.Get("/", makeHTTPHandlerFunc(s.handleGetPersons))
+	router.Get("/{id}", makeHTTPHandlerFunc(s.handleGetPersonByID))
+	router.Post("/", makeHTTPHandlerFunc(s.handlePostPerson))
+	router.Delete("/{id}", makeHTTPHandlerFunc(s.handleDeletePersonByID))
+	router.Put("/", makeHTTPHandlerFunc(s.handlePutPerson))
 
 	log.Println("Server is up and listening on port", s.listenAddr)
 	log.Fatal(http.ListenAndServe(s.listenAddr, router))
 }
 
-func (s *APIServer) handleGetAccounts(rw http.ResponseWriter, req *http.Request) error {
+func (s *APIServer) handleGetPersons(rw http.ResponseWriter, req *http.Request) error {
 
 	persons, err := s.storage.GetPersons()
 	if err != nil {
-		return fmt.Errorf("GetAllAccountFailed")
+		return WriteJSON(rw, http.StatusBadRequest, fmt.Errorf("GetAllAccountFailed"))
 	}
 
 	return WriteJSON(rw, http.StatusOK, persons)
 
 }
 
-func (s *APIServer) handleGetAccountByID(rw http.ResponseWriter, req *http.Request) error {
+func (s *APIServer) handleGetPersonByID(rw http.ResponseWriter, req *http.Request) error {
 	vars := chi.URLParam(req, "id")
-	id, _ := strconv.Atoi(vars)
-	// connecting to DB here
-	p := Person{ID: id}
-	return WriteJSON(rw, http.StatusOK, p)
+	id, err := strconv.Atoi(vars)
+	if err != nil {
+		return fmt.Errorf("error while converting string into integer: %v\n", err)
+	}
+	person, err := s.storage.GetPersonByID(id)
+	if err != nil {
+		return WriteJSON(rw, http.StatusNotFound, err)
+	}
+
+	return WriteJSON(rw, http.StatusOK, person)
 
 }
 
-func (s *APIServer) handlePostAccount(rw http.ResponseWriter, req *http.Request) error {
+func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) error {
 	rw.Header().Set("Content-type", "application/json")
 	rw.WriteHeader(http.StatusOK)
 
@@ -109,11 +115,21 @@ func (s *APIServer) handlePostAccount(rw http.ResponseWriter, req *http.Request)
 
 	return nil
 }
-func (s *APIServer) handleDeleteAccountByID(rw http.ResponseWriter, req *http.Request) error {
-	return nil
+func (s *APIServer) handleDeletePersonByID(rw http.ResponseWriter, req *http.Request) error {
+	vars := chi.URLParam(req, "id")
+	id, err := strconv.Atoi(vars)
+	if err != nil {
+		return fmt.Errorf("error while converting string into integer: %v\n", err)
+	}
+	err = s.storage.DeletePersonByID(id)
+	if err != nil {
+		return WriteJSON(rw, http.StatusNotFound, err)
+	}
+
+	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person with id %d deleted", id))
 }
 
-func (s *APIServer) handlePutAccount(rw http.ResponseWriter, req *http.Request) error {
+func (s *APIServer) handlePutPerson(rw http.ResponseWriter, req *http.Request) error {
 	p, _ := NewPerson(18, "A", "B", "C", "M", "ua")
 
 	// []Country{
@@ -126,5 +142,5 @@ func (s *APIServer) handlePutAccount(rw http.ResponseWriter, req *http.Request) 
 		return err
 	}
 
-	return WriteJSON(rw, http.StatusOK, personsID)
+	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person added successfully. Id is %d", personsID))
 }
