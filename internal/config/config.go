@@ -6,6 +6,12 @@ import (
 	"strconv"
 )
 
+type ExternalLinks struct {
+	AgeLink         string
+	GenderLink      string
+	NationalityLink string
+}
+
 type DataBaseConfig struct {
 	Driver   string
 	Host     string
@@ -16,7 +22,8 @@ type DataBaseConfig struct {
 }
 
 type Config struct {
-	DBConf DataBaseConfig
+	DBConf       DataBaseConfig
+	EnrichSource ExternalLinks
 }
 
 // NewConfig returns a new Config struct
@@ -29,6 +36,11 @@ func NewConfig() Config {
 			Dbname:   getEnv("dbname", ""),
 			User:     getEnv("user", "postgres"),
 			Password: getEnv("password", "changeme"),
+		},
+		EnrichSource: ExternalLinks{
+			AgeLink:         getEnv("agelink", ""),
+			GenderLink:      getEnv("genderlink", ""),
+			NationalityLink: getEnv("nationalitylink", ""),
 		},
 	}
 }

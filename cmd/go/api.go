@@ -95,15 +95,29 @@ func (s *APIServer) handleGetPersonByID(rw http.ResponseWriter, req *http.Reques
 }
 
 func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) error {
+
+	// Get a JSON struct from random API
 	rw.Header().Set("Content-type", "application/json")
 	rw.WriteHeader(http.StatusOK)
 
-	p, err := persons.NewPostPerson(req)
+	// Create PostPerson struct to put received values
+	receivedPerson, err := persons.NewPostPerson(req)
 	if err != nil {
 		return WriteJSON(rw, http.StatusBadRequest, err)
 	}
 
-	updated, err := persons.UpdatePostPerson("https://api.agify.io/?name=Dmitriy", p)
+	// Enrich struct fields
+	updated, err := persons.EnrichPostPerson("https://api.agify.io/?name=Dmitriy", receivedPerson)
+	if err != nil {
+		return WriteJSON(rw, http.StatusBadRequest, err)
+	}
+
+	personToPut, err := persons.EnrichPerson(updated)
+	if err != nil {
+		return WriteJSON(rw, http.StatusBadRequest, err)
+	}
+
+	id, err := s.storage.AddPerson(personToPut)
 	if err != nil {
 		return WriteJSON(rw, http.StatusBadRequest, err)
 	}
@@ -113,15 +127,7 @@ func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) 
 	// 	return WriteJSON(rw, http.StatusBadRequest, err)
 	// }
 
-	personToPut, err := persons.UpdatePerson(updated)
-	if err != nil {
-		return WriteJSON(rw, http.StatusBadRequest, err)
-	}
-
-	id, err := s.storage.AddPerson(personToPut)
-	if err != nil {
-		return WriteJSON(rw, http.StatusBadRequest, err)
-	}
+	// update a Person struct before putting it into db
 
 	// country, err := UpdatePostPerson("https://api.nationalize.io/?name=Dmitriy")
 	// if err != nil {

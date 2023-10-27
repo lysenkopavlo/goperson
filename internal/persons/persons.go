@@ -54,7 +54,7 @@ func NewPostPerson(req *http.Request) (types.PostPerson, error) {
 	return pp, nil
 }
 
-func UpdatePostPerson(link string, old types.PostPerson) (types.PostPerson, error) {
+func EnrichPostPerson(link string, old types.PostPerson) (types.PostPerson, error) {
 
 	resp, err := http.Get(link)
 	if err != nil {
