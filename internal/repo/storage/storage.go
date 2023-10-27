@@ -62,7 +62,6 @@ func (psql *PostgresRepo) GetPersons() ([]types.Person, error) {
 		persons = append(persons, p)
 	}
 
-	//good practice to check the error after scanning rows
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error from GetAllRows is: %v\n", err)
 	}

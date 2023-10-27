@@ -17,11 +17,12 @@ In order to build and run this application, it is necessary to
 install Soda:
 
 ```
-go install github.com/gobuffalo/pop/... 
+go install -tags sqlite github.com/gobuffalo/pop/v6/soda@latest
 ```
 
-create a postgres database and fill in the correct values in .env, 
-and then run <soda migrate>.
+Create a postgres database. 
+Fill in the correct values in .env, and database.yml.
+Only then run <soda migrate>.
 
 To make a binary file:
 
