@@ -90,10 +90,9 @@ func (s *APIServer) handleGetPersons(rw http.ResponseWriter, req *http.Request) 
 
 // handleGetPersonByID finds person by given id
 func (s *APIServer) handleGetPersonByID(rw http.ResponseWriter, req *http.Request) error {
-	vars := chi.URLParam(req, "id")
-	id, err := strconv.Atoi(vars)
+	id, err := getId(req)
 	if err != nil {
-		return fmt.Errorf("error while converting string into integer: %v\n", err)
+		return WriteJSON(rw, http.StatusNotFound, fmt.Errorf("error while getting person by ID is %v", err))
 	}
 	person, err := s.storage.GetPersonByID(id)
 	if err != nil {
@@ -151,10 +150,9 @@ func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) 
 
 // handleDeletePersonByID delete an person by given id
 func (s *APIServer) handleDeletePersonByID(rw http.ResponseWriter, req *http.Request) error {
-	vars := chi.URLParam(req, "id")
-	id, err := strconv.Atoi(vars)
+	id, err := getId(req)
 	if err != nil {
-		return fmt.Errorf("error while converting string into integer: %v\n", err)
+		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while deleting: %v\n", err))
 	}
 	err = s.storage.DeletePersonByID(id)
 	if err != nil {
@@ -178,4 +176,14 @@ func (s *APIServer) handlePutPerson(rw http.ResponseWriter, req *http.Request) e
 	}
 
 	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person added successfully. Id is %d", personsID))
+}
+
+func getId(req *http.Request) (int, error) {
+	vars := chi.URLParam(req, "id")
+	id, err := strconv.Atoi(vars)
+	if err != nil {
+		return -1, fmt.Errorf("error while converting string into integer: %v\n", err)
+	}
+
+	return id, nil
 }
