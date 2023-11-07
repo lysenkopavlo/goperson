@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"log/slog"
 
 	"github.com/joho/godotenv"
 	"github.com/lysenkopavlo/goperson/internal/config"
@@ -21,13 +22,13 @@ func init() {
 
 func main() {
 	conf := config.NewConfig()
-
+	slog.Info("Config's loaded")
 	// dataSourceName will be using in the data base connection
 	dsn := conf.FormDSN()
 
 	// create a connection to database
 	conn, err := driver.ConnectSQL(dsn)
-	log.Println("Connecting to database...")
+	slog.Info("Connecting to database...")
 
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v\n", err)
@@ -35,6 +36,7 @@ func main() {
 
 	psql := storage.NewPostgresRepo(conn)
 	defer psql.DB.Close()
+	slog.Info("Connected to DB")
 
 	httpServer := NewAPIserver(port, psql, conf.EnrichSource)
 	httpServer.Run()

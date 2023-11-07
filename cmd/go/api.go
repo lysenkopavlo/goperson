@@ -105,7 +105,9 @@ func (s *APIServer) handleGetPersonByID(rw http.ResponseWriter, req *http.Reques
 		return WriteJSON(rw, http.StatusNotFound, fmt.Errorf("error while getting person by ID is %v", err))
 	}
 
-	slog.Info("handleGetPersonByID worked well")
+	slog.Info("handleGetPersonByID worked well",
+		slog.Any("given person", person))
+
 	return WriteJSON(rw, http.StatusOK, person)
 
 }
@@ -157,7 +159,10 @@ func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) 
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while putting Person is %v", err))
 	}
 
-	slog.Info("handlePostPerson worked as expected")
+	slog.Info("handlePostPerson worked as expected",
+		slog.Group("Updated",
+			slog.Any("person is", personToPut)))
+
 	return WriteJSON(rw, http.StatusOK, id)
 
 }
@@ -175,26 +180,26 @@ func (s *APIServer) handleDeletePersonByID(rw http.ResponseWriter, req *http.Req
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while deleting: %v\n", err))
 	}
 
-	slog.Info("handleDeletePerson worked as expected")
+	slog.Info("handleDeletePerson worked as expected", "delete person with id: ", id)
 	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person with id %d deleted", id))
 }
 
 // handlePutPerson puts person into table
 func (s *APIServer) handlePutPerson(rw http.ResponseWriter, req *http.Request) error {
-	p, err := types.NewPerson(age, name, patronymic, surname, gender, countryID)
+	person, err := types.NewPerson(age, name, patronymic, surname, gender, countryID)
 
 	if err != nil {
 		slog.Error("NewPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while creating entity of type Person is: %v\n", err))
 	}
 
-	personsID, err := s.storage.AddPerson(p)
+	personsID, err := s.storage.AddPerson(person)
 	if err != nil {
 		slog.Error("AddPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while adding Person is: %v\n", err))
 	}
 
-	slog.Info("handlePutPerson worked as expected")
+	slog.Info("handlePutPerson worked as expected", "put in DB: ", person)
 	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person added successfully. Id is %d", personsID))
 }
 
