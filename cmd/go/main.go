@@ -38,4 +38,5 @@ func main() {
 
 	httpServer := NewAPIserver(port, psql, conf.EnrichSource)
 	httpServer.Run()
+
 }

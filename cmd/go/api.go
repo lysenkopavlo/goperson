@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/lysenkopavlo/goperson/internal/types"
 )
 
-// values to creating dummy struct in put method
+// values to create dummy struct in put method
 const (
 	age        = 18
 	name       = "A"
@@ -71,6 +72,7 @@ type apiFunc func(http.ResponseWriter, *http.Request) error
 func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		if err := f(rw, r); err != nil {
+			slog.Error("handler misbehavior", "error: ", err)
 			WriteJSON(rw, r.Response.StatusCode, err)
 		}
 	}
@@ -81,9 +83,11 @@ func (s *APIServer) handleGetPersons(rw http.ResponseWriter, req *http.Request) 
 
 	persons, err := s.storage.GetPersons()
 	if err != nil {
+		slog.Error("handleGetPerson did't work", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while getting all the persons is %v", err))
 	}
 
+	slog.Info("handleGetPersons worked well")
 	return WriteJSON(rw, http.StatusOK, persons)
 
 }
@@ -92,13 +96,16 @@ func (s *APIServer) handleGetPersons(rw http.ResponseWriter, req *http.Request) 
 func (s *APIServer) handleGetPersonByID(rw http.ResponseWriter, req *http.Request) error {
 	id, err := getId(req)
 	if err != nil {
+		slog.Error("getId function didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusNotFound, fmt.Errorf("error while getting person by ID is %v", err))
 	}
 	person, err := s.storage.GetPersonByID(id)
 	if err != nil {
+		slog.Error("GetPersonByID didn't work well", "error", err)
 		return WriteJSON(rw, http.StatusNotFound, fmt.Errorf("error while getting person by ID is %v", err))
 	}
 
+	slog.Info("handleGetPersonByID worked well")
 	return WriteJSON(rw, http.StatusOK, person)
 
 }
@@ -113,37 +120,44 @@ func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) 
 	// Create PostPerson struct to put received values
 	receivedPerson, err := persons.NewPostPerson(req)
 	if err != nil {
+		slog.Error("NewPostPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while handling POST method is %v", err))
 	}
 
 	// Enrich struct fields with age
 	upgraded, err := persons.EnrichPostPerson(s.ExternalSource.AgeLink, "age", receivedPerson)
 	if err != nil {
+		slog.Error("EnrichPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while age enrichment is %v", err))
 	}
 	// Enrich struct fields with gender
 	upgraded, err = persons.EnrichPostPerson(s.ExternalSource.GenderLink, "gender", upgraded)
 
 	if err != nil {
+		slog.Error("EnrichPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while gender enrichment is %v", err))
 	}
 
 	// Enrich struct fields with nationality
 	upgraded, err = persons.EnrichPostPerson(s.ExternalSource.NationalityLink, "nationality", upgraded)
 	if err != nil {
+		slog.Error("EnrichPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while nationality enrichment is %v", err))
 	}
 	// update a Person struct before putting it into db
 	personToPut, err := persons.EnrichPerson(upgraded)
 	if err != nil {
+		slog.Error("EnrichPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while enrichment of type Person is %v", err))
 
 	}
 	id, err := s.storage.AddPerson(personToPut)
 	if err != nil {
+		slog.Error("AddPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while putting Person is %v", err))
 	}
 
+	slog.Info("handlePostPerson worked as expected")
 	return WriteJSON(rw, http.StatusOK, id)
 
 }
@@ -152,13 +166,16 @@ func (s *APIServer) handlePostPerson(rw http.ResponseWriter, req *http.Request) 
 func (s *APIServer) handleDeletePersonByID(rw http.ResponseWriter, req *http.Request) error {
 	id, err := getId(req)
 	if err != nil {
+		slog.Error("getID didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while deleting: %v\n", err))
 	}
 	err = s.storage.DeletePersonByID(id)
 	if err != nil {
+		slog.Error("DeletePersonByID didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while deleting: %v\n", err))
 	}
 
+	slog.Info("handleDeletePerson worked as expected")
 	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person with id %d deleted", id))
 }
 
@@ -167,14 +184,17 @@ func (s *APIServer) handlePutPerson(rw http.ResponseWriter, req *http.Request) e
 	p, err := types.NewPerson(age, name, patronymic, surname, gender, countryID)
 
 	if err != nil {
+		slog.Error("NewPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while creating entity of type Person is: %v\n", err))
 	}
 
 	personsID, err := s.storage.AddPerson(p)
 	if err != nil {
+		slog.Error("AddPerson didn't work well", "error: ", err)
 		return WriteJSON(rw, http.StatusInternalServerError, fmt.Errorf("error while adding Person is: %v\n", err))
 	}
 
+	slog.Info("handlePutPerson worked as expected")
 	return WriteJSON(rw, http.StatusOK, fmt.Sprintf("Person added successfully. Id is %d", personsID))
 }
 
@@ -182,8 +202,10 @@ func getId(req *http.Request) (int, error) {
 	vars := chi.URLParam(req, "id")
 	id, err := strconv.Atoi(vars)
 	if err != nil {
+		slog.Error("strconv.Atoi didn't work well", "error: ", err)
 		return -1, fmt.Errorf("error while converting string into integer: %v\n", err)
 	}
 
+	slog.Info("getId worked as expected")
 	return id, nil
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/lysenkopavlo/goperson/internal/types"
 )
 
-// Declaring an interface where we us it
 type DataBase interface {
 	GetPersons() ([]types.Person, error)
 	GetPersonByID(int) (types.Person, error)
